@@ -7,6 +7,8 @@
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen">
+  <meta name="screen-orientation" content="landscape">
   <title>⟁ PulseQuest</title>
   <style>
     :root {
@@ -40,11 +42,9 @@
     .shell {
       width: 100%;
       height: 100%;
-      max-width: 900px;
-      max-height: 700px;
       display: flex;
       flex-direction: column;
-      padding: 20px;
+      padding: 10px;
     }
 
     .card {
@@ -53,18 +53,33 @@
       flex-direction: column;
       background: var(--card);
       border: 1px solid var(--stroke);
-      border-radius: 20px;
+      border-radius: 12px;
       overflow: hidden;
       position: relative;
+      width: 100%;
+      height: 100%;
     }
 
     .hud {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 16px 20px;
+      padding: 12px 20px;
       border-bottom: 1px solid var(--stroke);
-      background: rgba(0, 0, 0, 0.2);
+      background: rgba(0, 0, 0, 0.3);
+      gap: 20px;
+    }
+
+    .hud-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .hud-center {
+      display: flex;
+      align-items: center;
+      gap: 20px;
     }
 
     .title {
@@ -87,34 +102,64 @@
       justify-content: center;
       position: relative;
       touch-action: none;
+      min-height: 0;
     }
 
     #grid {
-      width: 100%;
-      max-width: 100%;
-      max-height: 100%;
-      aspect-ratio: 21 / 7;
+      width: min(100%, 90vw);
+      height: auto;
+      max-height: min(600px, 70vh);
+      aspect-ratio: 14 / 4;
       display: grid;
-      grid-template-columns: repeat(21, 1fr);
-      gap: 1px;
-      padding: 4px;
-      background: rgba(0, 0, 0, 0.5);
-      border: 1px solid var(--stroke);
-      border-radius: 12px;
+      grid-template-columns: repeat(14, 1fr);
+      gap: clamp(1px, 0.2vw, 3px);
+      padding: clamp(2px, 0.3vw, 4px);
+      background: rgba(0, 0, 0, 0.6);
+      border: 2px solid var(--stroke);
+      border-radius: 8px;
     }
 
     .cell {
       width: 100%;
+      height: 100%;
       aspect-ratio: 1;
-      max-width: 36px;
-      max-height: 36px;
-      border-radius: 4px;
+      min-width: 18px;
+      min-height: 18px;
+      max-width: 40px;
+      max-height: 40px;
+      border-radius: clamp(2px, 0.3vw, 4px);
       display: flex;
       align-items: center;
       justify-content: center;
       position: relative;
       background: var(--empty);
-      border: 1px solid rgba(46, 229, 157, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: clamp(16px, 2.5vw, 24px);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      #grid {
+        max-height: min(400px, 60vh);
+      }
+
+      .cell {
+        min-width: 16px;
+        min-height: 16px;
+        max-width: 28px;
+        max-height: 28px;
+      }
+    }
+
+    @media (min-width: 1200px) {
+      #grid {
+        max-height: min(700px, 75vh);
+      }
+
+      .cell {
+        max-width: 45px;
+        max-height: 45px;
+      }
     }
 
     .cell.beacon {
@@ -136,31 +181,28 @@
       font-size: 18px;
     }
 
-    /* Compass */
+    /* Compass - in HUD header */
     .compass {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      width: 80px;
-      height: 80px;
-      background: rgba(0, 0, 0, 0.5);
+      width: 60px;
+      height: 60px;
+      background: rgba(0, 0, 0, 0.6);
       border: 2px solid var(--stroke);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 10;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
 
     .compass-inner {
       position: relative;
-      width: 60px;
-      height: 60px;
+      width: 45px;
+      height: 45px;
     }
 
     .compass-arrow {
       position: absolute;
-      font-size: 16px;
+      font-size: 12px;
       opacity: 0.3;
       transition: opacity 0.3s, transform 0.3s;
     }
@@ -330,99 +372,22 @@
       transform: translateY(0);
     }
 
-    .tap-hint {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.6);
-      padding: 8px 16px;
-      border-radius: 99px;
-      font-size: 13px;
-      color: #aaa;
-      pointer-events: none;
-      border: 1px solid var(--stroke);
-    }
-
-    /* Distance Scan Overlay */
-    .scan-overlay {
-      position: absolute;
-      top: 80px;
-      left: 50%;
-      transform: translateX(-50%) scale(0.8);
-      background: rgba(10, 15, 30, 0.95);
-      border: 2px solid var(--accent);
-      border-radius: 16px;
-      padding: 20px 28px;
-      z-index: 200;
-      opacity: 0;
-      pointer-events: none;
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      backdrop-filter: blur(12px);
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(108, 168, 255, 0.3);
-    }
-
-    .scan-overlay.active {
-      opacity: 1;
-      transform: translateX(-50%) scale(1);
-    }
-
-    .scan-overlay h3 {
-      margin: 0 0 16px 0;
-      font-size: 18px;
-      color: var(--accent);
-      text-align: center;
-      font-weight: 700;
-    }
-
-    .scan-data {
-      display: flex;
-      gap: 24px;
-      font-size: 16px;
-    }
-
-    .scan-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .scan-label {
-      font-size: 12px;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .scan-value {
-      font-size: 28px;
-      font-weight: 800;
-      color: var(--beacon);
-      text-shadow: 0 0 20px rgba(255, 209, 102, 0.5);
-    }
-
     /* Sonar Blinkers */
     .sonar-blinkers {
-      position: absolute;
-      bottom: 80px;
-      left: 50%;
-      transform: translateX(-50%);
       display: flex;
-      gap: 48px;
-      z-index: 150;
-      padding: 20px 32px;
+      gap: 16px;
+      padding: 10px 20px;
       background: rgba(0, 0, 0, 0.6);
       border-radius: 99px;
-      border: 1px solid var(--stroke);
+      border: 2px solid var(--stroke);
     }
 
     .sonar-led {
       width: 24px;
       height: 24px;
       border-radius: 50%;
-      background: rgba(255, 255, 255, 0.1);
-      border: 2px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.15);
+      border: 2px solid rgba(255, 255, 255, 0.3);
       transition: all 0.15s;
       position: relative;
     }
@@ -453,28 +418,35 @@
       box-shadow: 0 0 24px var(--beacon), inset 0 0 12px rgba(255, 255, 255, 0.5);
     }
 
-    .input-flash {
-      position: fixed;
-      width: 60px;
-      height: 60px;
-      background: rgba(108, 168, 255, 0.6);
-      border-radius: 50%;
-      pointer-events: none;
-      z-index: 2000;
-      transform: translate(-50%, -50%) scale(0);
-      animation: flashIn 0.4s ease-out forwards;
+    /* Controls Panel */
+    .controls-panel {
+      background: rgba(0, 0, 0, 0.4);
+      border-top: 1px solid var(--stroke);
+      padding: 16px 20px;
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      flex-wrap: wrap;
     }
 
-    @keyframes flashIn {
-      0% {
-        transform: translate(-50%, -50%) scale(0.4);
-        opacity: 1;
-      }
+    .control-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.8);
+    }
 
-      100% {
-        transform: translate(-50%, -50%) scale(2);
-        opacity: 0;
-      }
+    .control-key {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--stroke);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-weight: 600;
+      font-size: 12px;
+      color: var(--accent);
+      min-width: 60px;
+      text-align: center;
     }
 
     #overlay {
@@ -532,7 +504,23 @@
   <div class="shell">
     <div class="card">
       <div class="hud">
-        <div class="title">⟁ PulseQuest</div>
+        <div class="hud-left">
+          <div class="title">⟁ PulseQuest</div>
+        </div>
+        <div class="hud-center">
+          <div class="compass">
+            <div class="compass-inner">
+              <div class="compass-arrow n" id="compass-n">▲</div>
+              <div class="compass-arrow e" id="compass-e">►</div>
+              <div class="compass-arrow s" id="compass-s">▼</div>
+              <div class="compass-arrow w" id="compass-w">◀</div>
+            </div>
+          </div>
+          <div class="sonar-blinkers">
+            <div class="sonar-led" id="led-left"></div>
+            <div class="sonar-led" id="led-right"></div>
+          </div>
+        </div>
         <div class="info">
           Pos: <span id="pos">1,1</span> | Dir: <span id="dir">E</span> | Steps: <span id="steps">0</span>
           <button class="menu-btn" onclick="toggleDrawer()" style="margin-left: 15px;">🗺️</button>
@@ -540,16 +528,7 @@
       </div>
 
       <div class="stage" id="stage">
-        <div class="compass">
-          <div class="compass-inner">
-            <div class="compass-arrow n" id="compass-n">▲</div>
-            <div class="compass-arrow e" id="compass-e">►</div>
-            <div class="compass-arrow s" id="compass-s">▼</div>
-            <div class="compass-arrow w" id="compass-w">◀</div>
-          </div>
-        </div>
         <div id="grid"></div>
-        <div class="tap-hint">Tap Left: Move • Tap Right: Turn • Hold Both: Scan</div>
         <div class="scan-overlay" id="scanOverlay">
           <h3>📡 Distance Scan</h3>
           <div class="scan-data">
@@ -563,9 +542,28 @@
             </div>
           </div>
         </div>
-        <div class="sonar-blinkers">
-          <div class="sonar-led" id="led-left"></div>
-          <div class="sonar-led" id="led-right"></div>
+      </div>
+
+      <div class="controls-panel">
+        <div class="control-item">
+          <span class="control-key">Tap Left</span>
+          <span>Move Forward</span>
+        </div>
+        <div class="control-item">
+          <span class="control-key">Tap Right</span>
+          <span>Turn Right 90°</span>
+        </div>
+        <div class="control-item">
+          <span class="control-key">Hold Both</span>
+          <span>Sonar Scan</span>
+        </div>
+        <div class="control-item">
+          <span class="control-key">W / ↑</span>
+          <span>Move (Desktop)</span>
+        </div>
+        <div class="control-item">
+          <span class="control-key">D / →</span>
+          <span>Turn (Desktop)</span>
         </div>
       </div>
 
@@ -592,27 +590,35 @@
   </div>
 
   <div id="win" class="hidden">
-    <h2>🎉</h2>
-    <p>Treat found! Refresh to play again</p>
+    <h2>🥇</h2>
+    <p>Treat found! You have saved the world!!</p>
+    <div style="margin-top: 20px;">
+      <select id="winMapSelect" onchange="loadMapFromWin()"
+        style="padding: 10px 20px; font-size: 14px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid var(--stroke); color: var(--text); cursor: pointer;">
+        <option value="0">Map: Empty</option>
+        <option value="1">Map: Simple Maze</option>
+        <option value="2">Map: Challenge</option>
+      </select>
+    </div>
   </div>
 
   <script>
     // Game constants
-    const WIDTH = 21;
-    const HEIGHT = 7;
+    const WIDTH = 14;
+    const HEIGHT = 4;
     const DIR = ['N', 'E', 'S', 'W'];
     const DX = [0, 1, 0, -1];
     const DY = [-1, 0, 1, 0];
     const COMPASS_IDS = ['compass-n', 'compass-e', 'compass-s', 'compass-w'];
 
-    // Maps: E = Empty, W = Wall, B = Beacon
+    // Maps: E = Empty, W = Wall, B = Beacon (14x4 grid)
     const MAPS = [
       // Map 0: Empty
-      "EEEEEEEEEEEEEEEEEEEEE,EEEEEEEEEEEEEEEEEEEEE,EEEEEEEEEEEEEEEEEEEEE,EEEEEEEEEEEEEEEEEEEEE,EEEEEEEEEEEEEEEEEEEEE,EEEEEEEEEEEEEEEEEBEEE,EEEEEEEEEEEEEEEEEEEEE",
+      "EEEEEEEEEEEEEE,EEEEEEEEEEEEEE,EEEEEEEEEEBEEE,EEEEEEEEEEEEEE",
       // Map 1: Simple Maze
-      "WWWWWWWWWWWWWWWWWWWWW,WEEEEEWWWWWEEEEEEEWW,WEWWWEWWWWWEWWWWWEWW,WEWWWEEEEEEEWWWWWEWW,WEWWWWWWWWWWWEEEEEWW,WEEEEEEEEEEEEEWWWBEW,WWWWWWWWWWWWWWWWWWWWW",
+      "WWWWWWWWWWWWWW,WEEEEWWWEEEEEW,WEWWWWWWEWWWEW,WEEEEEEEEWWBEW",
       // Map 2: Challenge
-      "WWWWWWWWWWWWWWWWWWWWW,WEEEEEWEEEWEEEEEEEEWW,WEWWWEWWWWWEWEWWWEWW,WEEWEWEEEEEEEWWWBEWW,WEWWWWWWWWWWWEEEWEWW,WEEEEEEEEEEEEEEEEEWW,WWWWWWWWWWWWWWWWWWWWW"
+      "WWWWWWWWWWWWWW,WEEEEWEEEEEEEW,WEWWWWWWEWWBEW,WEEEEEEEEEEEEW"
     ];
 
     // Game state
@@ -836,6 +842,13 @@
       render();
     }
 
+    // Load map from win screen
+    function loadMapFromWin() {
+      const mapIndex = parseInt(document.getElementById('winMapSelect').value);
+      document.getElementById('mapSelect').value = mapIndex;
+      loadMap();
+    }
+
     // Toggle drawer
     function toggleDrawer() {
       document.getElementById('drawer').classList.toggle('open');
@@ -929,10 +942,21 @@
       else if (e.key === 'd' || e.key === 'ArrowRight') turnRight();
     });
 
-    // Start game
+    // Start game with fullscreen
     function start() {
       document.getElementById('overlay').classList.add('hidden');
       started = true;
+
+      // Request fullscreen
+      const elem = document.documentElement;
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen().catch(err => console.log('Fullscreen failed:', err));
+      } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen();
+      } else if (elem.msRequestFullscreen) {
+        elem.msRequestFullscreen();
+      }
+
       loadMap();
     }
 
