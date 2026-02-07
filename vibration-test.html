@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Vibration Test</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: white;
+      overflow: hidden;
+    }
+
+    .info {
+      padding: 20px;
+      text-align: center;
+      background: #16213e;
+      border-bottom: 2px solid #0f3460;
+    }
+
+    .info h1 {
+      font-size: 24px;
+      margin-bottom: 10px;
+      color: #e94560;
+    }
+
+    .info p {
+      font-size: 14px;
+      color: #aaa;
+      margin: 5px 0;
+    }
+
+    #status {
+      font-size: 12px;
+      margin-top: 10px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+    }
+
+    .zones {
+      flex: 1;
+      display: flex;
+    }
+
+    .zone {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 20px;
+      font-size: 48px;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .zone.left {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .zone.right {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .zone.active {
+      filter: brightness(1.5);
+      transform: scale(0.98);
+    }
+
+    .label {
+      font-size: 32px;
+    }
+
+    .arrow {
+      font-size: 64px;
+    }
+
+    #log {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-height: 150px;
+      background: rgba(0, 0, 0, 0.9);
+      color: #0f0;
+      font-family: monospace;
+      font-size: 11px;
+      padding: 10px;
+      overflow-y: auto;
+      border-top: 2px solid #0f3460;
+    }
+
+    .log-entry {
+      margin: 2px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="info">
+    <h1>🔊 Vibration Test</h1>
+    <p>Tap LEFT or RIGHT to test vibration</p>
+    <div id="status">Loading...</div>
+  </div>
+
+  <div class="zones">
+    <div class="zone left" id="leftZone">
+      <div class="arrow">◀</div>
+      <div class="label">LEFT</div>
+    </div>
+    <div class="zone right" id="rightZone">
+      <div class="arrow">▶</div>
+      <div class="label">RIGHT</div>
+    </div>
+  </div>
+
+  <div id="log"></div>
+
+  <script>
+    // Logging
+    const logEl = document.getElementById('log');
+    function log(msg) {
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      const time = new Date().toLocaleTimeString();
+      entry.textContent = `[${time}] ${msg}`;
+      logEl.appendChild(entry);
+      logEl.scrollTop = logEl.scrollHeight;
+      console.log(msg);
+    }
+
+    // Check device and API support
+    const userAgent = navigator.userAgent;
+    const isAndroid = /Android/i.test(userAgent);
+    const isiOS = /iPhone|iPad|iPod/i.test(userAgent);
+    const supportsVibrate = 'vibrate' in navigator;
+
+    log(`User Agent: ${userAgent}`);
+    log(`Android: ${isAndroid}`);
+    log(`iOS: ${isiOS}`);
+    log(`Vibration API: ${supportsVibrate}`);
+
+    const statusEl = document.getElementById('status');
+    if (!supportsVibrate) {
+      statusEl.innerHTML = '❌ Vibration API not supported';
+      statusEl.style.background = 'rgba(255, 0, 0, 0.3)';
+      log('ERROR: Vibration API not available');
+    } else if (isiOS) {
+      statusEl.innerHTML = '⚠️ iOS detected - Safari blocks vibration';
+      statusEl.style.background = 'rgba(255, 165, 0, 0.3)';
+      log('WARNING: iOS does not support Vibration API');
+    } else {
+      statusEl.innerHTML = '✅ Vibration API available - Tap to test!';
+      statusEl.style.background = 'rgba(0, 255, 0, 0.3)';
+      log('SUCCESS: Ready to test vibrations');
+    }
+
+    // Vibration patterns
+    const patterns = {
+      left: [0, 200, 100, 200],      // Strong double pulse
+      right: [0, 100, 50, 100, 50, 100] // Triple quick pulse
+    };
+
+    function vibrate(side) {
+      if (!supportsVibrate) {
+        log(`❌ Cannot vibrate - API not supported`);
+        return;
+      }
+
+      const pattern = patterns[side];
+      log(`🔊 Triggering ${side.toUpperCase()} vibration: [${pattern.join(', ')}]`);
+
+      try {
+        const result = navigator.vibrate(pattern);
+        log(`   Result: ${result ? 'SUCCESS' : 'FAILED'}`);
+        
+        if (!result) {
+          log('   Trying simple vibration...');
+          const simpleResult = navigator.vibrate(200);
+          log(`   Simple result: ${simpleResult ? 'SUCCESS' : 'FAILED'}`);
+        }
+      } catch (e) {
+        log(`❌ ERROR: ${e.message}`);
+      }
+    }
+
+    // Touch handlers
+    const leftZone = document.getElementById('leftZone');
+    const rightZone = document.getElementById('rightZone');
+
+    function handleTouch(side, element) {
+      log(`👆 ${side.toUpperCase()} zone tapped`);
+      element.classList.add('active');
+      vibrate(side);
+      
+      setTimeout(() => {
+        element.classList.remove('active');
+      }, 300);
+    }
+
+    // Use both touch and pointer events for compatibility
+    leftZone.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      handleTouch('left', leftZone);
+    }, { passive: false });
+
+    rightZone.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      handleTouch('right', rightZone);
+    }, { passive: false });
+
+    leftZone.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'touch') {
+        handleTouch('left', leftZone);
+      }
+    });
+
+    rightZone.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'touch') {
+        handleTouch('right', rightZone);
+      }
+    });
+
+    log('🎮 Test app ready!');
+  </script>
+</body>
+</html>

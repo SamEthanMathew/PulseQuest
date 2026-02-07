@@ -777,20 +777,28 @@
       const newY = py + DY[pd];
 
       // Check bounds
-      if (newX < 0 || newX >= WIDTH || newY < 0 || newY >= HEIGHT) return;
+      if (newX < 0 || newX >= WIDTH || newY < 0 || newY >= HEIGHT) {
+        triggerHaptic([0, 100]); // Wall bump
+        return;
+      }
 
       // Check for wall
       const tile = getTile(newX, newY);
-      if (tile === 'W') return;
+      if (tile === 'W') {
+        triggerHaptic([0, 100]); // Wall bump
+        return;
+      }
 
       // Move player
       px = newX;
       py = newY;
       steps++;
+      triggerHaptic([0, 30]); // Light tap for movement
 
       // Check win
       if (tile === 'B') {
         document.getElementById('win').classList.remove('hidden');
+        triggerHaptic([0, 100, 100, 100, 100, 150]); // Victory pattern
       }
 
       render();
@@ -800,6 +808,7 @@
     function turnRight() {
       if (!started) return;
       pd = (pd + 1) % 4;
+      triggerHaptic([0, 20]); // Quick tick for turning
       render();
     }
 
@@ -846,7 +855,28 @@
       performSonarBlinks(direction, blinkCount);
     }
 
-    // Sonar blink animation (2 LEDs)
+    // Detect if Android
+    function isAndroid() {
+      return /Android/i.test(navigator.userAgent);
+    }
+
+    // Check if vibration is supported
+    function supportsVibration() {
+      return 'vibrate' in navigator;
+    }
+
+    // Trigger haptic feedback (Android only)
+    function triggerHaptic(pattern) {
+      if (isAndroid() && supportsVibration()) {
+        try {
+          navigator.vibrate(pattern);
+        } catch (e) {
+          console.log('Vibration failed:', e);
+        }
+      }
+    }
+
+    // Sonar blink animation (2 LEDs) with synced Android haptics
     function performSonarBlinks(direction, distanceBlinks) {
       const leftLed = document.getElementById('led-left');
       const rightLed = document.getElementById('led-right');
@@ -855,32 +885,48 @@
 
       // Direction cue (slower timing: 150ms ON, 200ms gap, 400ms pause before distance)
       if (direction === 'left') {
-        timeline.push({ leds: [leftLed], duration: 150, gap: 400 });
+        timeline.push({ leds: [leftLed], duration: 150, gap: 400, haptic: 'left' });
       } else if (direction === 'right') {
-        timeline.push({ leds: [rightLed], duration: 150, gap: 400 });
+        timeline.push({ leds: [rightLed], duration: 150, gap: 400, haptic: 'right' });
       } else if (direction === 'ahead') {
         // Both LEDs short pulse
-        timeline.push({ leds: [leftLed, rightLed], duration: 150, gap: 400 });
+        timeline.push({ leds: [leftLed, rightLed], duration: 150, gap: 400, haptic: 'both' });
       } else if (direction === 'behind') {
         // Both LEDs - two long pulses
-        timeline.push({ leds: [leftLed, rightLed], duration: 300, gap: 150, long: true });
-        timeline.push({ leds: [leftLed, rightLed], duration: 300, gap: 400, long: true });
+        timeline.push({ leds: [leftLed, rightLed], duration: 300, gap: 150, long: true, haptic: 'both' });
+        timeline.push({ leds: [leftLed, rightLed], duration: 300, gap: 400, long: true, haptic: 'both' });
       }
 
       // Distance blinks (on both LEDs for clarity)
       for (let i = 0; i < distanceBlinks; i++) {
         const isLast = i === distanceBlinks - 1;
-        timeline.push({ leds: [leftLed, rightLed], duration: 150, gap: isLast ? 0 : 200 });
+        timeline.push({ leds: [leftLed, rightLed], duration: 150, gap: isLast ? 0 : 200, haptic: 'both' });
       }
 
-      // Execute timeline
+      // Execute LED timeline with synchronized haptics
       let currentTime = 0;
       timeline.forEach(step => {
         setTimeout(() => {
+          // Turn on LEDs
           step.leds.forEach(led => {
             led.classList.add('active');
             if (step.long) led.classList.add('long');
           });
+          
+          // Trigger haptic feedback at the same time as LED
+          if (step.haptic === 'left') {
+            // Left: single strong pulse
+            triggerHaptic([0, step.duration]);
+          } else if (step.haptic === 'right') {
+            // Right: two quick pulses to differentiate
+            const halfDuration = Math.floor(step.duration / 2);
+            triggerHaptic([0, halfDuration, 30, halfDuration - 30]);
+          } else if (step.haptic === 'both') {
+            // Both: single pulse matching LED duration
+            triggerHaptic([0, step.duration]);
+          }
+          
+          // Turn off LEDs after duration
           setTimeout(() => {
             step.leds.forEach(led => {
               led.classList.remove('active');
