@@ -1,0 +1,30 @@
+{
+  "name": "pulsequest",
+  "version": "1.0.0",
+  "scripts": {
+    "serve": "cd web && python -m http.server 8000",
+    "inline": "node build/inline.js",
+    "minify": "node build/minify.js",
+    "build": "npm run inline && npm run minify",
+    "pack": "bash scripts/pack.sh tar.br",
+    "pack:gz": "bash scripts/pack.sh tar.gz",
+    "pack:zst": "bash scripts/pack.sh tar.zst",
+    "size": "wc -c < pulsequest.tar.br",
+    "verify": "bash scripts/verify.sh tar.br",
+    "verify:gz": "bash scripts/verify.sh tar.gz",
+    "submit": "npm run build && npm run pack && npm run size",
+    "test:local": "cd dist && python -m http.server 8000",
+    "cap:sync": "npx cap sync",
+    "cap:open:ios": "npx cap open ios",
+    "cap:open:android": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/haptics": "^6.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/ios": "^6.0.0",
+    "html-minifier-terser": "^7.2.0"
+  }
+}
