@@ -12,13 +12,13 @@
   <title>⟁ PulseQuest</title>
   <style>
     :root {
-      --bg: #070a16;
-      --card: #0f1420;
-      --text: #e8edf5;
-      --stroke: #1e2738;
-      --accent: #6ca8ff;
-      --beacon: #ffd166;
-      --empty: #1a2332;
+      --bg: #0a0e27;
+      --card: #1a1f3a;
+      --text: #e0e7ff;
+      --stroke: #2d3561;
+      --accent: #8b5cf6;
+      --beacon: #fbbf24;
+      --empty: #0f1729;
     }
 
     * {
@@ -29,7 +29,15 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: var(--bg);
+      background: linear-gradient(135deg, 
+        #0a0e27 0%,
+        #1a1b4b 25%,
+        #2d1b4e 50%,
+        #1a1b4b 75%,
+        #0a0e27 100%
+      );
+      background-size: 400% 400%;
+      animation: nebula-flow 20s ease infinite;
       color: var(--text);
       overflow: hidden;
       width: 100vw;
@@ -37,6 +45,36 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+
+    @keyframes nebula-flow {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: 
+        radial-gradient(2px 2px at 20% 30%, white, transparent),
+        radial-gradient(2px 2px at 60% 70%, white, transparent),
+        radial-gradient(1px 1px at 50% 50%, white, transparent),
+        radial-gradient(1px 1px at 80% 10%, white, transparent),
+        radial-gradient(2px 2px at 90% 60%, white, transparent),
+        radial-gradient(1px 1px at 33% 80%, white, transparent),
+        radial-gradient(1px 1px at 15% 90%, white, transparent);
+      background-size: 200% 200%;
+      animation: stars-twinkle 3s ease-in-out infinite;
+      pointer-events: none;
+      opacity: 0.6;
+      z-index: 1;
+    }
+
+    @keyframes stars-twinkle {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 0.9; }
     }
 
     .shell {
@@ -45,6 +83,8 @@
       display: flex;
       flex-direction: column;
       padding: 10px;
+      position: relative;
+      z-index: 2;
     }
 
     .card {
@@ -58,6 +98,7 @@
       position: relative;
       width: 100%;
       height: 100%;
+      min-height: 0;
     }
 
     .hud {
@@ -68,6 +109,7 @@
       border-bottom: 1px solid var(--stroke);
       background: rgba(0, 0, 0, 0.3);
       gap: 20px;
+      flex-wrap: wrap;
     }
 
     .hud-left {
@@ -83,13 +125,14 @@
     }
 
     .title {
-      font-size: 20px;
+      font-size: clamp(16px, 4vw, 20px);
       font-weight: 800;
       color: var(--beacon);
+      text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
     }
 
     .info {
-      font-size: 14px;
+      font-size: clamp(12px, 3vw, 14px);
       color: var(--text);
     }
 
@@ -103,106 +146,156 @@
       position: relative;
       touch-action: none;
       min-height: 0;
+      overflow: hidden;
     }
 
     #grid {
-      width: min(100%, 90vw);
+      width: 100%;
       height: auto;
-      max-height: min(600px, 70vh);
+      max-height: 100%;
       aspect-ratio: 14 / 4;
       display: grid;
       grid-template-columns: repeat(14, 1fr);
-      gap: clamp(1px, 0.2vw, 3px);
-      padding: clamp(2px, 0.3vw, 4px);
-      background: rgba(0, 0, 0, 0.6);
+      grid-template-rows: repeat(4, 1fr);
+      gap: clamp(2px, 0.5vw, 6px);
+      padding: clamp(4px, 0.8vw, 8px);
+      background: rgba(10, 14, 39, 0.8);
+      backdrop-filter: blur(10px);
       border: 2px solid var(--stroke);
       border-radius: 8px;
+      box-shadow: 0 0 30px rgba(139, 92, 246, 0.3);
+      min-height: 0;
     }
 
     .cell {
       width: 100%;
       height: 100%;
       aspect-ratio: 1;
-      min-width: 18px;
-      min-height: 18px;
-      max-width: 40px;
-      max-height: 40px;
       border-radius: clamp(2px, 0.3vw, 4px);
       display: flex;
       align-items: center;
       justify-content: center;
       position: relative;
-      background: var(--empty);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      font-size: clamp(16px, 2.5vw, 24px);
+      background: linear-gradient(135deg, #0f1729 0%, #1a1f3a 100%);
+      border: 1px solid rgba(139, 92, 246, 0.2);
     }
 
     /* Responsive adjustments */
-    @media (max-width: 768px) {
-      #grid {
-        max-height: min(400px, 60vh);
+    /* Small phones (<375px) */
+    @media (max-width: 374px) {
+      .shell {
+        padding: 4px;
       }
 
-      .cell {
-        min-width: 16px;
-        min-height: 16px;
-        max-width: 28px;
-        max-height: 28px;
+      .hud {
+        padding: 8px 10px;
+        gap: 10px;
+      }
+
+      .hud-center {
+        gap: 10px;
+      }
+
+      .stage {
+        padding: 8px;
+      }
+
+      .controls-panel {
+        padding: 8px 10px;
+      }
+
+      .menu-btn {
+        padding: 6px 10px;
+        font-size: 14px;
       }
     }
 
-    @media (min-width: 1200px) {
-      #grid {
-        max-height: min(700px, 75vh);
+    /* Phones (375px-768px) */
+    @media (max-width: 768px) {
+      .shell {
+        padding: 6px;
       }
 
-      .cell {
-        max-width: 45px;
-        max-height: 45px;
+      .hud {
+        padding: 10px 12px;
+      }
+
+      .stage {
+        padding: 12px;
+      }
+
+      .controls-panel {
+        padding: 10px 12px;
+      }
+    }
+
+    /* Tablets (768px-1024px) */
+    @media (min-width: 768px) and (max-width: 1023px) {
+      .stage {
+        padding: 16px;
+      }
+    }
+
+    /* Desktop (1024px-1440px) */
+    @media (min-width: 1024px) {
+      .stage {
+        padding: 20px;
+      }
+    }
+
+    /* Large desktop (>1440px) - prevent over-scaling */
+    @media (min-width: 1440px) {
+      .stage {
+        padding: 24px;
+      }
+
+      #grid {
+        max-width: 1200px;
       }
     }
 
     .cell.beacon {
-      background: #3d2f1a;
-      border-color: rgba(255, 209, 102, 0.35);
+      background: linear-gradient(135deg, #92400e 0%, #78350f 100%);
+      border-color: rgba(251, 191, 36, 0.5);
+      box-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
     }
 
     .cell.wall {
-      background: #2a3142;
-      border-color: rgba(255, 255, 255, 0.08);
+      background: linear-gradient(135deg, #3f3f46 0%, #27272a 100%);
+      border-color: rgba(161, 161, 170, 0.3);
     }
 
     .player {
-      font-size: 18px;
+      font-size: clamp(14px, 3vw, 22px);
       filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
     }
 
     .icon {
-      font-size: 18px;
+      font-size: clamp(14px, 3vw, 22px);
     }
 
     /* Compass - in HUD header */
     .compass {
-      width: 60px;
-      height: 60px;
-      background: rgba(0, 0, 0, 0.6);
-      border: 2px solid var(--stroke);
+      width: clamp(48px, 12vw, 60px);
+      height: clamp(48px, 12vw, 60px);
+      background: rgba(10, 14, 39, 0.9);
+      border: 2px solid rgba(139, 92, 246, 0.5);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
     }
 
     .compass-inner {
       position: relative;
-      width: 45px;
-      height: 45px;
+      width: 75%;
+      height: 75%;
     }
 
     .compass-arrow {
       position: absolute;
-      font-size: 12px;
+      font-size: clamp(10px, 2.5vw, 12px);
       opacity: 0.3;
       transition: opacity 0.3s, transform 0.3s;
     }
@@ -260,7 +353,7 @@
       top: 0;
       right: 0;
       bottom: 0;
-      width: 280px;
+      width: min(280px, 80vw);
       background: rgba(10, 15, 30, 0.98);
       border-left: 1px solid var(--stroke);
       z-index: 1000;
@@ -350,10 +443,10 @@
       background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
       border: 1px solid var(--stroke);
       color: var(--text);
-      padding: 8px 12px;
+      padding: clamp(6px, 2vw, 8px) clamp(10px, 3vw, 12px);
       border-radius: 8px;
       cursor: pointer;
-      font-size: 16px;
+      font-size: clamp(14px, 3.5vw, 16px);
       font-weight: 600;
       transition: all 0.2s;
       display: inline-flex;
@@ -375,16 +468,16 @@
     /* Sonar Blinkers */
     .sonar-blinkers {
       display: flex;
-      gap: 16px;
-      padding: 10px 20px;
-      background: rgba(0, 0, 0, 0.6);
+      gap: clamp(12px, 3vw, 16px);
+      padding: clamp(8px, 2vw, 10px) clamp(16px, 4vw, 20px);
+      background: rgba(10, 14, 39, 0.9);
       border-radius: 99px;
-      border: 2px solid var(--stroke);
+      border: 2px solid rgba(139, 92, 246, 0.5);
     }
 
     .sonar-led {
-      width: 24px;
-      height: 24px;
+      width: clamp(20px, 5vw, 24px);
+      height: clamp(20px, 5vw, 24px);
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.15);
       border: 2px solid rgba(255, 255, 255, 0.3);
@@ -422,18 +515,18 @@
     .controls-panel {
       background: rgba(0, 0, 0, 0.4);
       border-top: 1px solid var(--stroke);
-      padding: 16px 20px;
+      padding: clamp(10px, 3vw, 16px) clamp(12px, 4vw, 20px);
       display: flex;
       justify-content: center;
-      gap: 40px;
+      gap: clamp(12px, 4vw, 40px);
       flex-wrap: wrap;
     }
 
     .control-item {
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 13px;
+      gap: clamp(6px, 2vw, 8px);
+      font-size: clamp(11px, 2.5vw, 13px);
       color: rgba(255, 255, 255, 0.8);
     }
 
@@ -441,11 +534,11 @@
       background: rgba(255, 255, 255, 0.1);
       border: 1px solid var(--stroke);
       border-radius: 4px;
-      padding: 4px 8px;
+      padding: clamp(3px, 1vw, 4px) clamp(6px, 2vw, 8px);
       font-weight: 600;
-      font-size: 12px;
+      font-size: clamp(10px, 2.5vw, 12px);
       color: var(--accent);
-      min-width: 60px;
+      min-width: clamp(50px, 12vw, 60px);
       text-align: center;
     }
 
@@ -467,13 +560,13 @@
     }
 
     #overlay h2 {
-      font-size: 48px;
+      font-size: clamp(32px, 10vw, 48px);
       margin-bottom: 10px;
       color: var(--beacon);
     }
 
     #overlay p {
-      font-size: 14px;
+      font-size: clamp(12px, 3vw, 14px);
       color: var(--accent);
     }
 
@@ -487,6 +580,7 @@
       align-items: center;
       justify-content: center;
       z-index: 100;
+      padding: 20px;
     }
 
     #win.hidden {
@@ -494,8 +588,13 @@
     }
 
     #win h2 {
-      font-size: 64px;
+      font-size: clamp(48px, 12vw, 64px);
       margin-bottom: 20px;
+    }
+
+    #win p {
+      font-size: clamp(14px, 3.5vw, 18px);
+      text-align: center;
     }
   </style>
 </head>
@@ -529,19 +628,6 @@
 
       <div class="stage" id="stage">
         <div id="grid"></div>
-        <div class="scan-overlay" id="scanOverlay">
-          <h3>📡 Distance Scan</h3>
-          <div class="scan-data">
-            <div class="scan-item">
-              <div class="scan-label">X Distance</div>
-              <div class="scan-value" id="scanX">0</div>
-            </div>
-            <div class="scan-item">
-              <div class="scan-label">Y Distance</div>
-              <div class="scan-value" id="scanY">0</div>
-            </div>
-          </div>
-        </div>
       </div>
 
       <div class="controls-panel">
@@ -657,7 +743,7 @@
           // Wall
           else if (tile === 'W') {
             cell.classList.add('wall');
-            cell.innerHTML = '<span class="icon">🧱</span>';
+            cell.innerHTML = '<span class="icon">☄️</span>';
           }
 
           // Player
@@ -724,13 +810,6 @@
       const dx = beaconX - px;
       const dy = beaconY - py;
 
-      // Update scan overlay
-      document.getElementById('scanX').textContent = Math.abs(dx);
-      document.getElementById('scanY').textContent = Math.abs(dy);
-
-      const overlay = document.getElementById('scanOverlay');
-      overlay.classList.add('active');
-
       // Calculate angle relative to player's facing direction
       const beaconAngle = Math.atan2(dy, dx) * 180 / Math.PI;
       const playerAngle = [0, 90, 180, -90][pd]; // N=0°, E=90°, S=180°, W=-90°
@@ -765,11 +844,6 @@
 
       // Perform sonar animation
       performSonarBlinks(direction, blinkCount);
-
-      // Hide overlay after animation completes
-      setTimeout(() => {
-        overlay.classList.remove('active');
-      }, 2000);
     }
 
     // Sonar blink animation (2 LEDs)
