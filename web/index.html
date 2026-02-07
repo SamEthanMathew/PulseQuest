@@ -344,6 +344,115 @@
       border: 1px solid var(--stroke);
     }
 
+    /* Distance Scan Overlay */
+    .scan-overlay {
+      position: absolute;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%) scale(0.8);
+      background: rgba(10, 15, 30, 0.95);
+      border: 2px solid var(--accent);
+      border-radius: 16px;
+      padding: 20px 28px;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(108, 168, 255, 0.3);
+    }
+
+    .scan-overlay.active {
+      opacity: 1;
+      transform: translateX(-50%) scale(1);
+    }
+
+    .scan-overlay h3 {
+      margin: 0 0 16px 0;
+      font-size: 18px;
+      color: var(--accent);
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .scan-data {
+      display: flex;
+      gap: 24px;
+      font-size: 16px;
+    }
+
+    .scan-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .scan-label {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .scan-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--beacon);
+      text-shadow: 0 0 20px rgba(255, 209, 102, 0.5);
+    }
+
+    /* Sonar Blinkers */
+    .sonar-blinkers {
+      position: absolute;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 48px;
+      z-index: 150;
+      padding: 20px 32px;
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 99px;
+      border: 1px solid var(--stroke);
+    }
+
+    .sonar-led {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.15s;
+      position: relative;
+    }
+
+    .sonar-led::before {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .sonar-led.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      box-shadow: 0 0 24px var(--accent), inset 0 0 12px rgba(255, 255, 255, 0.5);
+    }
+
+    .sonar-led.active::before {
+      opacity: 0.7;
+    }
+
+    .sonar-led.long {
+      background: var(--beacon);
+      border-color: var(--beacon);
+      box-shadow: 0 0 24px var(--beacon), inset 0 0 12px rgba(255, 255, 255, 0.5);
+    }
+
     .input-flash {
       position: fixed;
       width: 60px;
@@ -440,7 +549,24 @@
           </div>
         </div>
         <div id="grid"></div>
-        <div class="tap-hint">Tap Left: Move • Tap Right: Turn</div>
+        <div class="tap-hint">Tap Left: Move • Tap Right: Turn • Hold Both: Scan</div>
+        <div class="scan-overlay" id="scanOverlay">
+          <h3>📡 Distance Scan</h3>
+          <div class="scan-data">
+            <div class="scan-item">
+              <div class="scan-label">X Distance</div>
+              <div class="scan-value" id="scanX">0</div>
+            </div>
+            <div class="scan-item">
+              <div class="scan-label">Y Distance</div>
+              <div class="scan-value" id="scanY">0</div>
+            </div>
+          </div>
+        </div>
+        <div class="sonar-blinkers">
+          <div class="sonar-led" id="led-left"></div>
+          <div class="sonar-led" id="led-right"></div>
+        </div>
       </div>
 
       <!-- Settings Drawer -->
@@ -585,6 +711,107 @@
       render();
     }
 
+    // Distance scan with sonar blinkers
+    function performScan() {
+      if (!started) return;
+
+      const dx = beaconX - px;
+      const dy = beaconY - py;
+
+      // Update scan overlay
+      document.getElementById('scanX').textContent = Math.abs(dx);
+      document.getElementById('scanY').textContent = Math.abs(dy);
+
+      const overlay = document.getElementById('scanOverlay');
+      overlay.classList.add('active');
+
+      // Calculate angle relative to player's facing direction
+      const beaconAngle = Math.atan2(dy, dx) * 180 / Math.PI;
+      const playerAngle = [0, 90, 180, -90][pd]; // N=0°, E=90°, S=180°, W=-90°
+      let relativeAngle = beaconAngle - playerAngle;
+
+      // Normalize to -180 to 180
+      while (relativeAngle > 180) relativeAngle -= 360;
+      while (relativeAngle < -180) relativeAngle += 360;
+
+      // Determine direction
+      let direction;
+      if (Math.abs(relativeAngle) <= 25) {
+        direction = 'ahead';
+      } else if (Math.abs(relativeAngle) >= 155) {
+        direction = 'behind';
+      } else if (relativeAngle > 0) {
+        direction = 'right';
+      } else {
+        direction = 'left';
+      }
+
+      // Calculate Manhattan distance
+      const manhattanDist = Math.abs(dx) + Math.abs(dy);
+
+      // Determine blink count (for 21x7 grid)
+      let blinkCount;
+      if (manhattanDist <= 1) blinkCount = 5;
+      else if (manhattanDist <= 3) blinkCount = 4;
+      else if (manhattanDist <= 6) blinkCount = 3;
+      else if (manhattanDist <= 10) blinkCount = 2;
+      else blinkCount = 1;
+
+      // Perform sonar animation
+      performSonarBlinks(direction, blinkCount);
+
+      // Hide overlay after animation completes
+      setTimeout(() => {
+        overlay.classList.remove('active');
+      }, 2000);
+    }
+
+    // Sonar blink animation (2 LEDs)
+    function performSonarBlinks(direction, distanceBlinks) {
+      const leftLed = document.getElementById('led-left');
+      const rightLed = document.getElementById('led-right');
+
+      let timeline = [];
+
+      // Direction cue (slower timing: 150ms ON, 200ms gap, 400ms pause before distance)
+      if (direction === 'left') {
+        timeline.push({ leds: [leftLed], duration: 150, gap: 400 });
+      } else if (direction === 'right') {
+        timeline.push({ leds: [rightLed], duration: 150, gap: 400 });
+      } else if (direction === 'ahead') {
+        // Both LEDs short pulse
+        timeline.push({ leds: [leftLed, rightLed], duration: 150, gap: 400 });
+      } else if (direction === 'behind') {
+        // Both LEDs - two long pulses
+        timeline.push({ leds: [leftLed, rightLed], duration: 300, gap: 150, long: true });
+        timeline.push({ leds: [leftLed, rightLed], duration: 300, gap: 400, long: true });
+      }
+
+      // Distance blinks (on both LEDs for clarity)
+      for (let i = 0; i < distanceBlinks; i++) {
+        const isLast = i === distanceBlinks - 1;
+        timeline.push({ leds: [leftLed, rightLed], duration: 150, gap: isLast ? 0 : 200 });
+      }
+
+      // Execute timeline
+      let currentTime = 0;
+      timeline.forEach(step => {
+        setTimeout(() => {
+          step.leds.forEach(led => {
+            led.classList.add('active');
+            if (step.long) led.classList.add('long');
+          });
+          setTimeout(() => {
+            step.leds.forEach(led => {
+              led.classList.remove('active');
+              if (step.long) led.classList.remove('long');
+            });
+          }, step.duration);
+        }, currentTime);
+        currentTime += step.duration + step.gap;
+      });
+    }
+
     // Load map
     function loadMap() {
       const mapIdx = parseInt(document.getElementById('mapSelect').value);
@@ -614,9 +841,12 @@
       document.getElementById('drawer').classList.toggle('open');
     }
 
-    // Touch controls (using proven logic from touch-test.html)
+    // Touch controls with scan support
+    let touchTimeout = null;
+    let wasHeld = false;
     const stageEl = document.getElementById('stage');
     const activePointers = new Map();
+    let leftTouch = false, rightTouch = false;
 
     function showFlash(x, y) {
       const flash = document.createElement('div');
@@ -627,14 +857,37 @@
       setTimeout(() => flash.remove(), 400);
     }
 
+    function updateTouchZones() {
+      const rect = stageEl.getBoundingClientRect();
+      const mid = rect.left + rect.width / 2;
+
+      leftTouch = false;
+      rightTouch = false;
+      activePointers.forEach(pointer => {
+        if (pointer.x < mid) leftTouch = true;
+        else rightTouch = true;
+      });
+    }
+
     stageEl.addEventListener('pointerdown', (e) => {
       if (!started) return;
 
       e.preventDefault();
       stageEl.setPointerCapture(e.pointerId);
 
+      wasHeld = false;
       activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      updateTouchZones();
       showFlash(e.clientX, e.clientY);
+
+      // Check for two-finger scan
+      if (leftTouch && rightTouch) {
+        clearTimeout(touchTimeout);
+        touchTimeout = setTimeout(() => {
+          wasHeld = true;
+          performScan();
+        }, 300);
+      }
     }, { passive: false });
 
     stageEl.addEventListener('pointerup', (e) => {
@@ -647,20 +900,27 @@
       const startX = activePointers.get(e.pointerId).x;
 
       activePointers.delete(e.pointerId);
+      clearTimeout(touchTimeout);
+      updateTouchZones();
 
-      // Determine action based on which side was tapped
-      if (startX < mid) {
-        // Left side = Move
-        moveForward();
-      } else {
-        // Right side = Turn
-        turnRight();
+      // Only perform action if not held (scan)
+      if (activePointers.size === 0 && !wasHeld) {
+        // Determine action based on which side was tapped
+        if (startX < mid) {
+          // Left side = Move
+          moveForward();
+        } else {
+          // Right side = Turn
+          turnRight();
+        }
       }
     });
 
     stageEl.addEventListener('pointercancel', (e) => {
       try { stageEl.releasePointerCapture(e.pointerId); } catch { }
       activePointers.delete(e.pointerId);
+      clearTimeout(touchTimeout);
+      updateTouchZones();
     });
 
     // Keyboard controls
